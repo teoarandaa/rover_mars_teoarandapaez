@@ -10,57 +10,89 @@
             <input 
               type="number" 
               class="form-control" 
+              :class="{ 'is-invalid': errors.x }"
               id="x" 
-              v-model="form.x" 
+              v-model.number="form.x" 
               min="0" 
               max="199" 
+              @input="validateX"
               required
             >
+            <div class="invalid-feedback" v-if="errors.x">
+              {{ errors.x }}
+            </div>
           </div>
           <div class="mb-3">
             <label for="y" class="form-label">Posición Y (0-199)</label>
             <input 
               type="number" 
               class="form-control" 
+              :class="{ 'is-invalid': errors.y }"
               id="y" 
-              v-model="form.y" 
+              v-model.number="form.y" 
               min="0" 
               max="199" 
+              @input="validateY"
               required
             >
+            <div class="invalid-feedback" v-if="errors.y">
+              {{ errors.y }}
+            </div>
           </div>
           <div class="mb-3">
             <label for="direction" class="form-label">Dirección inicial</label>
-            <select class="form-select" id="direction" v-model="form.direction" required>
+            <select 
+              class="form-select" 
+              :class="{ 'is-invalid': errors.direction }"
+              id="direction" 
+              v-model="form.direction" 
+              @change="validateDirection"
+              required
+            >
               <option value="N">Norte (N)</option>
               <option value="E">Este (E)</option>
               <option value="S">Sur (S)</option>
               <option value="W">Oeste (W)</option>
             </select>
+            <div class="invalid-feedback" v-if="errors.direction">
+              {{ errors.direction }}
+            </div>
           </div>
           <div class="mb-3">
             <label for="commands" class="form-label">Comandos (F, L, R)</label>
             <input 
               type="text" 
               class="form-control" 
+              :class="{ 'is-invalid': errors.commands }"
               id="commands" 
               v-model="form.commands" 
+              @input="validateCommands"
+              maxlength="100"
               required
             >
             <div class="form-text">Ejemplo: FFRFFFRL</div>
+            <div class="invalid-feedback" v-if="errors.commands">
+              {{ errors.commands }}
+            </div>
           </div>
           <div class="mb-3">
             <label for="obstacles" class="form-label">Obstáculos (opcional, formato: x1,y1;x2,y2)</label>
             <input 
               type="text" 
               class="form-control" 
+              :class="{ 'is-invalid': errors.obstacles }"
               id="obstacles" 
               v-model="form.obstacles" 
+              @input="validateObstacles"
+              maxlength="200"
               placeholder="0,2;2,3"
             >
             <div class="form-text">Ejemplo: 0,2;2,3</div>
+            <div class="invalid-feedback" v-if="errors.obstacles">
+              {{ errors.obstacles }}
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary w-100" :disabled="loading">
+          <button type="submit" class="btn btn-primary w-100" :disabled="loading || hasErrors">
             {{ loading ? 'Enviando...' : 'Enviar comandos' }}
           </button>
         </form>
@@ -119,7 +151,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 
 export default {
   name: 'RoverControl',
@@ -140,7 +172,97 @@ export default {
       obstacles: ''
     })
 
+    const errors = reactive({
+      x: '',
+      y: '',
+      direction: '',
+      commands: '',
+      obstacles: ''
+    })
+
+    // Validaciones
+    const validateX = () => {
+      const value = parseInt(form.x)
+      if (isNaN(value) || value < 0 || value > 199) {
+        errors.x = 'La posición X debe ser un número entre 0 y 199'
+      } else {
+        errors.x = ''
+      }
+    }
+
+    const validateY = () => {
+      const value = parseInt(form.y)
+      if (isNaN(value) || value < 0 || value > 199) {
+        errors.y = 'La posición Y debe ser un número entre 0 y 199'
+      } else {
+        errors.y = ''
+      }
+    }
+
+    const validateDirection = () => {
+      const validDirections = ['N', 'E', 'S', 'W']
+      if (!validDirections.includes(form.direction)) {
+        errors.direction = 'La dirección debe ser N, E, S o W'
+      } else {
+        errors.direction = ''
+      }
+    }
+
+    const validateCommands = () => {
+      // Limpiar comandos de caracteres no permitidos
+      form.commands = form.commands.replace(/[^FLR]/gi, '').toUpperCase()
+      
+      if (form.commands.length === 0) {
+        errors.commands = 'Debe ingresar al menos un comando'
+      } else if (form.commands.length > 100) {
+        errors.commands = 'Los comandos no pueden exceder 100 caracteres'
+      } else {
+        errors.commands = ''
+      }
+    }
+
+    const validateObstacles = () => {
+      if (!form.obstacles.trim()) {
+        errors.obstacles = ''
+        return
+      }
+
+      // Validar formato: x1,y1;x2,y2
+      const obstaclePattern = /^(\d+,\d+)(;\d+,\d+)*$/
+      if (!obstaclePattern.test(form.obstacles)) {
+        errors.obstacles = 'Formato inválido. Use: x1,y1;x2,y2'
+        return
+      }
+
+      // Validar que las coordenadas estén en rango
+      const obstacles = form.obstacles.split(';')
+      for (let obstacle of obstacles) {
+        const [x, y] = obstacle.split(',').map(Number)
+        if (x < 0 || x > 199 || y < 0 || y > 199) {
+          errors.obstacles = 'Las coordenadas deben estar entre 0 y 199'
+          return
+        }
+      }
+
+      errors.obstacles = ''
+    }
+
+    const hasErrors = computed(() => {
+      return Object.values(errors).some(error => error !== '')
+    })
+
     const executeCommands = async () => {
+      // Validar todo antes de enviar
+      validateX()
+      validateY()
+      validateDirection()
+      validateCommands()
+      validateObstacles()
+
+      if (hasErrors.value) {
+        return
+      }
+
       loading.value = true
       result.value = null
       
@@ -164,7 +286,8 @@ export default {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json', 
-            'Accept': 'application/json' 
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
           },
           body: JSON.stringify(payload)
         })
@@ -224,6 +347,7 @@ export default {
 
     return {
       form,
+      errors,
       loading,
       loadingHistory,
       result,
@@ -231,9 +355,15 @@ export default {
       resultTitle,
       historyResult,
       movements,
+      hasErrors,
       executeCommands,
       loadHistory,
-      formatDate
+      formatDate,
+      validateX,
+      validateY,
+      validateDirection,
+      validateCommands,
+      validateObstacles
     }
   }
 }
