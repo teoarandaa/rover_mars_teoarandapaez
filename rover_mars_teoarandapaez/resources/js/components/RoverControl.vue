@@ -106,19 +106,21 @@
       
       <div class="col-md-6">
         <div class="history-section">
-          <h4>📊 Historial de Movimientos</h4>
-          <button 
-            type="button" 
-            class="btn btn-outline-secondary mb-3" 
-            @click="loadHistory"
-            :disabled="loadingHistory"
-          >
-            {{ loadingHistory ? '🔄 Cargando...' : '🔄 Cargar Historial' }}
-          </button>
-          <div v-if="historyResult">
-            <div v-if="movements.length > 0" class="table-responsive">
-              <table class="table table-sm table-striped history-table">
-                <thead>
+          <h4>📊 {{ movements.length > 0 ? `Últimos ${movements.length} registros` : 'Historial de Movimientos' }}</h4>
+          <div class="mb-3">
+            <button 
+              type="button" 
+              class="btn btn-outline-secondary" 
+              @click="loadHistory"
+              :disabled="loadingHistory"
+            >
+              {{ loadingHistory ? '🔄 Cargando...' : '🔄 Cargar Historial' }}
+            </button>
+          </div>
+          <div v-if="historyResult" class="history-container">
+            <div v-if="movements.length > 0" class="table-responsive history-scroll">
+              <table class="table table-sm table-striped history-table mb-0">
+                <thead class="sticky-header">
                   <tr>
                     <th>Fecha</th>
                     <th>Inicio</th>
@@ -392,8 +394,34 @@ body {
   margin-top: 30px; 
 }
 
+.history-container {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.history-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
 .history-table { 
   font-size: 0.9em; 
+  margin-bottom: 0;
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 10;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.sticky-header th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
 }
 
 .status-ok { 
@@ -404,5 +432,24 @@ body {
 .status-obstacle { 
   color: #dc3545; 
   font-weight: bold; 
+}
+
+/* Estilos para el scrollbar */
+.history-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.history-scroll::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.history-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 </style> 
