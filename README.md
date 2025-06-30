@@ -69,6 +69,10 @@ docker compose exec app php artisan migrate
 ```
 
 6. **Acceder a la aplicación**
+- **Levantar proyecto**:
+  ```bash
+  npm run build
+  ```
 - **API y Web**: http://localhost:8000
 - **Interfaz de pruebas**: http://localhost:8000/rover-ui
 - **phpMyAdmin**: http://localhost:8080 (usuario: `root`, contraseña: `secret`)
