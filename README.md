@@ -71,7 +71,8 @@ docker compose exec app php artisan migrate
 6. **Acceder a la aplicación**
 - **Levantar proyecto**:
   ```bash
-  npm run build
+  php artisan serve  // Abre el puerto con el proyecto
+  npm run build      // Cualquier reload necesario
   ```
 - **API y Web**: http://localhost:8000
 - **Interfaz de pruebas**: http://localhost:8000/rover-ui
